@@ -9,7 +9,7 @@ import { CommandMap, readDir, requireFile, projectDir } from '../helpers';
 import { clone, fuse } from '../iteration';
 import { generateLogger } from '../logger';
 
-process.on('unhandledRejection', error => this.log.error('Uncaught Promise Rejection', error));
+process.on('unhandledRejection', error => console.error('Uncaught Promise Rejection', error));
 
 export abstract class IBot<T extends IBotConfig> {
     online: boolean;
