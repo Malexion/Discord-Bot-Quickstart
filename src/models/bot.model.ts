@@ -28,13 +28,16 @@ export abstract class IBot<T extends IBotConfig> {
         this.commands = new CommandMap();
         this.console = new ConsoleReader(this.logger);
         this.console.commands
-            .on('exit', (args: ParsedArgs, rl: Interface) => {
+            .on('exit', async(args: ParsedArgs, rl: Interface) => {
                 if(this.client)
                     this.client.destroy();
                 rl.close();
             });
-        this.client = new Client({ intents: [Intents.FLAGS.GUILDS] })
-            .on('ready', () => {
+        this.client = new Client({ intents: [Intents.FLAGS.GUILDS,
+            Intents.FLAGS.GUILD_MEMBERS,
+            Intents.FLAGS.GUILD_MESSAGES,
+            Intents.FLAGS.GUILD_VOICE_STATES ] })
+            .on('ready', async () => {
                 this.logger.debug('Bot Online');
                 this.online = true;
                 this.onReady(this.client);
@@ -42,15 +45,15 @@ export abstract class IBot<T extends IBotConfig> {
                     this.plugins.forEach(plugin => plugin.onReady(this.client));
                 }
             })
-            .on('disconnect', () => {
+            .on('disconnect', async () => {
                 this.online = false;
                 this.logger.debug('Bot Disconnected');
             })
-            .on('error', (error: Error) => {
+            .on('error', async(error: Error) => {
                 this.logger.error(error);
                 console.log(error);
             })
-            .on('message', (msg: Message) => {
+            .on('message',  (msg: Message) => {
                 if( msg.channel instanceof DMChannel)
                     return;//remove  getting cmnds from dm channel
                 if(!!this.initial_channel)
