@@ -1,5 +1,5 @@
 import { parse, SuccessfulParsedMessage } from 'discord-command-parser';
-import { Client, Message } from 'discord.js';
+import { Client, DMChannel, Intents, Message } from 'discord.js';
 import { ParsedArgs } from 'minimist';
 import { Interface } from 'readline';
 import { Logger } from 'winston';
@@ -19,6 +19,8 @@ export abstract class IBot<T extends IBotConfig> {
     readonly commands: CommandMap<(cmd: SuccessfulParsedMessage<Message>, msg: Message) => void>;
     readonly console: ConsoleReader;
     readonly plugins: IBotPlugin[];
+    initial_channel: string;
+
 
     constructor(config: T, defaults: T) {
         this.config = fuse(clone(defaults), config);
@@ -31,7 +33,7 @@ export abstract class IBot<T extends IBotConfig> {
                     this.client.destroy();
                 rl.close();
             });
-        this.client = new Client()
+        this.client = new Client({ intents: [Intents.FLAGS.GUILDS] })
             .on('ready', () => {
                 this.logger.debug('Bot Online');
                 this.online = true;
@@ -49,6 +51,13 @@ export abstract class IBot<T extends IBotConfig> {
                 console.log(error);
             })
             .on('message', (msg: Message) => {
+                if( msg.channel instanceof DMChannel)
+                    return;//remove  getting cmnds from dm channel
+                if(!!this.initial_channel)
+                         this.initial_channel =  msg.channel.id;//set initial channel
+                if(msg.channel.id != this.initial_channel)
+                    return; //if msg get from another chennel is ignored
+
                 this.preMessage(msg);
                 let parsed = parse(msg, this.config.command.symbol);
                 if(!parsed.success) return;
