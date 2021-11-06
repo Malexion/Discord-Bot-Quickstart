@@ -19,7 +19,7 @@ export abstract class IBot<T extends IBotConfig> {
     readonly commands: CommandMap<(cmd: SuccessfulParsedMessage<Message>, msg: Message) => void>;
     readonly console: ConsoleReader;
     readonly plugins: IBotPlugin[];
-    initial_channel: string;
+    initial_channel: string = null;
 
 
     constructor(config: T, defaults: T) {
@@ -55,13 +55,16 @@ export abstract class IBot<T extends IBotConfig> {
                 console.log(error);
             })
             .on('messageCreate',  (msg: Message) => {
-                if( msg.channel instanceof DMChannel)
+              /*  if( msg.channel instanceof DMChannel){
+                    this.console.logger("DM Channel");
                     return;//remove  getting cmnds from dm channel fail saife in case of future PM devs
-                if(!!this.initial_channel)
-                         this.initial_channel =  msg.channel.id;//set initial channel
-                if(msg.channel.id != this.initial_channel)
+                }*/
+                if(this.initial_channel == null){ 
+                        console.log(`set init channel ${this.initial_channel}`);
+                }
+                if(msg.channel.id != this.initial_channel){
                     return; //if msg get from another chennel is ignored
-
+                }
                 this.preMessage(msg);
                 let parsed = parse(msg, this.config.command.symbol);
                 if(!parsed.success) return;
