@@ -60,7 +60,7 @@ export abstract class IBot<T extends IBotConfig> {
                     return;//remove  getting cmnds from dm channel fail saife in case of future PM devs
                 }*/
                 if(this.initial_channel == null){ 
-                        console.log(`set init channel ${this.initial_channel}`);
+                    this.initial_channel = msg.channel.id;
                 }
                 if(msg.channel.id != this.initial_channel){
                     return; //if msg get from another chennel is ignored
