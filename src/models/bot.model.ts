@@ -1,5 +1,5 @@
 import { parse, SuccessfulParsedMessage } from 'discord-command-parser';
-import { Client, DMChannel, Intents, Message } from 'discord.js';
+import { Client, DMChannel, Intents, Message} from 'discord.js';
 import { ParsedArgs } from 'minimist';
 import { Interface } from 'readline';
 import { Logger } from 'winston';
@@ -36,7 +36,8 @@ export abstract class IBot<T extends IBotConfig> {
         this.client = new Client({ intents: [Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MEMBERS,
             Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.GUILD_VOICE_STATES ] })
+            Intents.FLAGS.GUILD_VOICE_STATES,
+            Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] })
             .on('ready', async () => {
                 this.logger.debug('Bot Online');
                 this.online = true;
@@ -53,9 +54,9 @@ export abstract class IBot<T extends IBotConfig> {
                 this.logger.error(error);
                 console.log(error);
             })
-            .on('message',  (msg: Message) => {
+            .on('messageCreate',  (msg: Message) => {
                 if( msg.channel instanceof DMChannel)
-                    return;//remove  getting cmnds from dm channel
+                    return;//remove  getting cmnds from dm channel fail saife in case of future PM devs
                 if(!!this.initial_channel)
                          this.initial_channel =  msg.channel.id;//set initial channel
                 if(msg.channel.id != this.initial_channel)
