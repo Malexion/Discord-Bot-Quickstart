@@ -1,5 +1,5 @@
 import { parse, SuccessfulParsedMessage } from 'discord-command-parser';
-import { Client, Message } from 'discord.js';
+import { Client, DMChannel, Intents, Message} from 'discord.js';
 import { ParsedArgs } from 'minimist';
 import { Interface } from 'readline';
 import { Logger } from 'winston';
@@ -19,6 +19,8 @@ export abstract class IBot<T extends IBotConfig> {
     readonly commands: CommandMap<(cmd: SuccessfulParsedMessage<Message>, msg: Message) => void>;
     readonly console: ConsoleReader;
     readonly plugins: IBotPlugin[];
+    initial_channel: string = null;
+
 
     constructor(config: T, defaults: T) {
         this.config = fuse(clone(defaults), config);
@@ -26,13 +28,17 @@ export abstract class IBot<T extends IBotConfig> {
         this.commands = new CommandMap();
         this.console = new ConsoleReader(this.logger);
         this.console.commands
-            .on('exit', (args: ParsedArgs, rl: Interface) => {
+            .on('exit', async(args: ParsedArgs, rl: Interface) => {
                 if(this.client)
                     this.client.destroy();
                 rl.close();
             });
-        this.client = new Client()
-            .on('ready', () => {
+        this.client = new Client({ intents: [Intents.FLAGS.GUILDS,
+            Intents.FLAGS.GUILD_MEMBERS,
+            Intents.FLAGS.GUILD_MESSAGES,
+            Intents.FLAGS.GUILD_VOICE_STATES,
+            Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] })
+            .on('ready', async () => {
                 this.logger.debug('Bot Online');
                 this.online = true;
                 this.onReady(this.client);
@@ -40,15 +46,25 @@ export abstract class IBot<T extends IBotConfig> {
                     this.plugins.forEach(plugin => plugin.onReady(this.client));
                 }
             })
-            .on('disconnect', () => {
+            .on('disconnect', async () => {
                 this.online = false;
                 this.logger.debug('Bot Disconnected');
             })
-            .on('error', (error: Error) => {
+            .on('error', async(error: Error) => {
                 this.logger.error(error);
                 console.log(error);
             })
-            .on('message', (msg: Message) => {
+            .on('messageCreate',  (msg: Message) => {
+              /*  if( msg.channel instanceof DMChannel){
+                    this.console.logger("DM Channel");
+                    return;//remove  getting cmnds from dm channel fail saife in case of future PM devs
+                }*/
+                if(this.initial_channel == null){ 
+                    this.initial_channel = msg.channel.id;
+                }
+                if(msg.channel.id != this.initial_channel){
+                    return; //if msg get from another chennel is ignored
+                }
                 this.preMessage(msg);
                 let parsed = parse(msg, this.config.command.symbol);
                 if(!parsed.success) return;
