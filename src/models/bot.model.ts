@@ -1,5 +1,5 @@
 import { parse, SuccessfulParsedMessage } from 'discord-command-parser';
-import { Client, DMChannel, Intents, Message} from 'discord.js';
+import { Client, GatewayIntentBits, Message} from 'discord.js';
 import { ParsedArgs } from 'minimist';
 import { Interface } from 'readline';
 import { Logger } from 'winston';
@@ -33,11 +33,12 @@ export abstract class IBot<T extends IBotConfig> {
                     this.client.destroy();
                 rl.close();
             });
-        this.client = new Client({ intents: [Intents.FLAGS.GUILDS,
-            Intents.FLAGS.GUILD_MEMBERS,
-            Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.GUILD_VOICE_STATES,
-            Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] })
+        this.client = new Client({ intents: [GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.GuildMembers,
+            GatewayIntentBits.GuildPresences,
+            GatewayIntentBits.GuildVoiceStates,
+            GatewayIntentBits.GuildMessageReactions,
+            GatewayIntentBits.DirectMessages ] })
             .on('ready', async () => {
                 this.logger.debug('Bot Online');
                 this.online = true;
